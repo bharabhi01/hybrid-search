@@ -41,7 +41,6 @@ const processText = async (data) => {
     }
 
     const cleanedText = cleanData(data);
-    console.log("Cleaned Text: ", cleanedText);
 
     try {
         // Create a pseudo-embedding using character-level features
@@ -72,7 +71,53 @@ const processText = async (data) => {
     }
 };
 
+
+const generateEmbedding = async (data) => {
+    if (typeof data !== 'string') {
+        return {
+            embeddings: null
+        };
+    }
+
+    try {
+        // Clean the input data first
+        const cleanedQuery = cleanData(data);
+        const words = cleanedQuery.split(' ');
+        const embedding = new Array(1536).fill(0);
+
+        // Modified embedding generation to put more emphasis on exact word matches
+        words.forEach((word, wordIndex) => {
+            // Hash the entire word to create a more unique signature
+            const wordHash = word.split('').reduce((acc, char) => {
+                return acc + char.charCodeAt(0);
+            }, 0);
+
+            // Create distinct regions in the embedding for each word
+            const regionSize = Math.floor(1536 / words.length);
+            const startPos = (wordIndex * regionSize) % 1536;
+
+            // Fill the region with the word's signature
+            for (let i = 0; i < regionSize && (startPos + i) < 1536; i++) {
+                embedding[startPos + i] = wordHash / (i + 1);
+            }
+        });
+
+        // Normalize the embedding with L2 normalization
+        const squareSum = embedding.reduce((acc, val) => acc + val * val, 0);
+        const magnitude = Math.sqrt(squareSum);
+        const normalizedEmbedding = embedding.map(x => x / (magnitude || 1));
+
+        return {
+            embeddings: normalizedEmbedding
+        };
+    } catch (error) {
+        console.error('Error generating embeddings:', error);
+        throw error;
+    }
+}
+
 export {
     cleanData,
-    processText
+    processText,
+    generateEmbedding
 }
