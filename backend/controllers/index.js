@@ -38,9 +38,9 @@ export const addData = async (req, res) => {
     }
 };
 
-
 export const searchData = async (req, res) => {
     const { query } = req.body;
+    console.log(query);
 
     const ELASTIC_WEIGHT = 0.4;
     const VECTOR_WEIGHT = 0.6;
